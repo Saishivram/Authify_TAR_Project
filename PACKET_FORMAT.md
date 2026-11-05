@@ -105,16 +105,16 @@ where `high_packet_id >= low_packet_id`. For example, `[[105, 105], [104, 103], 
 acknowledges packet IDs 101, 103, 104, and 105; it does not acknowledge 102.
 
 Packet ID interpretation by sender:
-- $X \le \text{ack\_received\_through\_packet\_id}$: Cumulatively acknowledged.
+- `X <= ack_received_through_packet_id`: Cumulatively acknowledged.
   This watermark represents the highest packet ID of a strictly contiguous prefix received
   from packet 1. It advances only across unbroken sequences and never crosses a gap.
-- $\text{ack\_range_floor\_packet\_id} \le X \le \text{largest\_packet\_id}$:
+- `ack_range_floor_packet_id <= X <= largest_packet_id`:
   Acknowledged if covered by any `[high, low]` range in `ack_ranges`. If omitted within
   this span, the packet was not received (potential loss subject to RACK loss deadline).
-- $\text{ack\_received\_through\_packet\_id} < X < \text{ack\_range\_floor\_packet\_id}$:
+- `ack_received_through_packet_id < X < ack_range_floor_packet_id`:
   Unknown state due to SACK history truncation. The sender MUST NEVER assume omitted
   packets in this gap are acknowledged or definitively lost.
-- $X > \text{largest\_packet\_id}$: In flight, not yet observed by receiver.
+- `X > largest_packet_id`: In flight, not yet observed by receiver.
 
 The receiver bounds memory by retaining at most 32 discontiguous SACK ranges (`MAX_SACK_RANGES = 32`).
 When older ranges are evicted, `ack_range_floor_packet_id` advances monotonically.
@@ -181,7 +181,7 @@ identifies the final record expected. Every FIN transmission or
 retransmission is assigned a unique `packet_id` to allow RTT tracking
 and retransmission management.
 
-## 7. FIN_ACK
+## 7. `FIN_ACK`
 
 ``` json
 {
@@ -193,8 +193,8 @@ and retransmission management.
 }
 ```
 
-The receiver sends FIN_ACK only after all records through
-`final_record_id` have been delivered in order. FIN/FIN_ACK are subject
+The receiver sends `FIN_ACK` only after all records through
+`final_record_id` have been delivered in order. `FIN` / `FIN_ACK` are subject
 to loss and must be retried.
 
 ## 8. RESET
