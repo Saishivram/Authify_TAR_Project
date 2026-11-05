@@ -254,18 +254,18 @@ example:
 ```
 
 Interpretation of packet IDs by the sender:
-1.  **$X \le \text{ack\_received\_through\_packet\_id}$:** Considered
+1.  **`X <= ack_received_through_packet_id`:** Considered
     cumulatively acknowledged. Represents the highest packet ID of a strictly
     contiguous sequence of received packet IDs from packet 1 up to that value.
-2.  **$\text{ack\_range\_floor\_packet\_id} \le X \le \text{largest\_packet\_id}$:**
-    -   If $X$ falls within one of the ranges in `ack_ranges`: **Acknowledged**.
-    -   If $X$ is omitted between `ack_range_floor_packet_id` and
+2.  **`ack_range_floor_packet_id <= X <= largest_packet_id`:**
+    -   If `X` falls within one of the ranges in `ack_ranges`: **Acknowledged**.
+    -   If `X` is omitted between `ack_range_floor_packet_id` and
         `largest_packet_id`: **Unacknowledged** (potential gap, evaluated
         by RACK loss detection once later packets are delivered).
-3.  **$\text{ack\_received\_through\_packet\_id} < X < \text{ack\_range\_floor\_packet\_id}$:**
+3.  **`ack_received_through_packet_id < X < ack_range_floor_packet_id`:**
     Unknown state due to SACK history truncation. The sender MUST NEVER assume omitted
     packets in this gap are acknowledged or definitively lost.
-4.  **$X > \text{largest\_packet\_id}$:** Still in flight; not yet observed
+4.  **`X > largest_packet_id`:** Still in flight; not yet observed
     by the receiver.
 
 Safe ACK history truncation and retirement policy:
@@ -275,7 +275,7 @@ Safe ACK history truncation and retirement policy:
 - **Watermark Advancement Rule:** The watermark `ack_received_through_packet_id`
   represents the highest packet ID of a **strictly contiguous prefix of
   received packet IDs from packet 1 up to that value**. It advances *only*
-  when every single packet ID from 1 through $K$ has been received. **It must
+  when every single packet ID from 1 through `K` has been received. **It must
   never advance across a missing packet ID.** If a gap exists (e.g. packet 50
   is missing while 51--60 have arrived), `ack_received_through_packet_id`
   remains strictly at 49.
@@ -284,7 +284,7 @@ Safe ACK history truncation and retirement policy:
   lower bound of the lowest retained range.
 - **Duplicate and Late Packet Handling After Retirement:**
   - Because `ack_received_through_packet_id` never crosses a missing packet,
-    any packet arriving with $\text{packet\_id} \le \text{ack\_received\_through\_packet\_id}$
+    any packet arriving with `packet_id <= ack_received_through_packet_id`
     is guaranteed to be a duplicate transmission rather than a late unreceived
     packet. The receiver acknowledges it implicitly and discards duplicate payload.
   - A late packet arriving above `ack_received_through_packet_id` is accepted,
@@ -293,7 +293,7 @@ Safe ACK history truncation and retirement policy:
 - **Sender Transmission History Retention:** The sender maintains outstanding
   and declared-lost transmission records in a retention table for an explicit
   safety horizon:
-  $$\text{retention\_time} = \max(2 \times SRTT + \text{reordering\_window}, 1.0\text{ s})$$
+  `retention_time = max(2 * SRTT + reordering_window, 1.0 s)`
   following a loss declaration, or until session completion. If an ACK
   subsequently arrives acknowledging an original `packet_id` before its
   retention expiry, the sender detects that the packet was delayed rather
@@ -350,16 +350,15 @@ When an incoming ACK confirms reception of new transmissions:
     the local monotonic arrival time of the ACK.
 2.  **Mandatory Causal Evidence:** An outstanding transmission `P` is
     evaluated for loss if and only if it was sent prior to that delivered
-    transmission:
-    $$P.\text{sent\_at} < \text{latest\_delivered\_tx\_time}$$
+    transmission: `P.sent_at < latest_delivered_tx_time`.
 3.  **Simplified Loss Deadline:** The loss deadline for `P` incorporates
     the outstanding packet's own send time, the path round-trip time, and
     the adaptive reordering tolerance:
-    $$\text{loss\_deadline}(P) = P.\text{sent\_at} + \text{RTT} + \text{reordering\_window}$$
-    where $\text{RTT} = \max(\text{latest\_rtt}, \text{min\_rtt})$ (or
-    $SRTT$ if `latest_rtt` is not yet available).
+    `loss_deadline(P) = P.sent_at + RTT + reordering_window`
+    where `RTT = max(latest_rtt, min_rtt)` (or `SRTT` if `latest_rtt`
+    is not yet available).
 4.  **Loss Declaration Rule:** Transmission `P` is declared lost when:
-    $$P.\text{sent\_at} < \text{latest\_delivered\_tx\_time} \quad \text{AND} \quad \text{now} \ge \text{loss\_deadline}(P)$$
+    `P.sent_at < latest_delivered_tx_time` and `now >= loss_deadline(P)`.
 5.  If eligible, mark that transmission attempt lost (`lost = True`) and
     submit its logical record to the centralized recovery scheduler, unless
     the logical record is already confirmed delivered.
@@ -419,20 +418,20 @@ On qualifying spurious-retransmission evidence:
 -   **Recovery Flight Definition:** When loss recovery begins, the sender
     defines the `recovery_flight` as the exact set of outstanding,
     unacknowledged transmission attempts sent up to that moment:
-    $$\text{recovery\_flight} = \{ P \mid P.\text{packet\_id} \le \text{recovery\_end\_packet} \text{ and not acknowledged at start} \}$$
-    where $\text{recovery\_end\_packet}$ is the highest `packet_id` sent
+    `recovery_flight = { P | P.packet_id <= recovery_end_packet and not acknowledged at start }`
+    where `recovery_end_packet` is the highest `packet_id` sent
     when loss was declared.
 -   **Defined Terminal States:** An attempt in the recovery flight reaches
     a terminal state when it is:
     1.  Acknowledged (`acknowledged == True`), OR
     2.  Declared lost by RACK or RTO (`lost == True`), OR
     3.  Declared permanently failed by retry exhaustion (`failed == True`).
--   **Interaction with Retransmissions:** When an attempt $P \in \text{recovery\_flight}$
+-   **Interaction with Retransmissions:** When an attempt `P` in `recovery_flight`
     is declared lost, its record is scheduled for retransmission as a new
-    transmission $Q$ with a fresh $\text{packet\_id} > \text{recovery\_end\_packet}$.
-    The original attempt $P$ has reached its terminal state (`lost = True`),
+    transmission `Q` with a fresh `packet_id > recovery_end_packet`.
+    The original attempt `P` has reached its terminal state (`lost = True`),
     fulfilling the recovery flight accounting for that transmission. The new
-    attempt $Q$ is not part of the current recovery flight; it belongs to
+    attempt `Q` is not part of the current recovery flight; it belongs to
     subsequent transmission history.
 -   **Unambiguous Completion Rule:** A recovery round does **not** complete
     merely because a newer packet or retransmission is acknowledged. The
@@ -489,7 +488,7 @@ the sender cannot wait forever when no later ACK arrives.
     not a theoretical guarantee of meeting the 1-second stall requirement.
 -   **Role vs. Primary Recovery:** Sub-second recovery is expected to be
     achieved via the primary **RACK** and **PTO** mechanisms, which operate
-    within 1--2 RTTs ($\approx 10\text{--}50\text{ ms}$). Fallback RTO
+    within 1–2 RTTs (approximately 10–50 ms). Fallback RTO
     serves strictly as a safety net against complete channel halts or
     tail deadlocks. The 500 ms floor prevents spurious RTO triggers during
     simulated 400 ms link stalls.
@@ -581,12 +580,12 @@ at 2,000, 5,000, 10,000, and 20,000 records/sec.
 
 A sender must not stop merely because it has generated the final record.
 
-The reliable FIN/FIN_ACK lifecycle is defined as follows:
+The reliable `FIN` / `FIN_ACK` lifecycle is defined as follows:
 
-1.  **FIN Initiation:** Once all records $1 \dots N$ have been generated
+1.  **FIN Initiation:** Once all records 1 to N have been generated
     and initially transmitted, the sender emits a `FIN` datagram containing
     `final_record_id` and assigned a new unique `packet_id`. The sender arms
-    a dedicated FIN retransmission timer (e.g., $2 \times SRTT$).
+    a dedicated `FIN` retransmission timer (e.g., `2 * SRTT`).
 2.  **FIN Retransmission Rule:** Every `FIN` retransmission receives a
     **fresh, unique `packet_id`** while retaining the exact same
     `final_record_id`.
@@ -602,7 +601,7 @@ The reliable FIN/FIN_ACK lifecycle is defined as follows:
         and the sender retransmits `FIN` with a new `packet_id`.
     -   If the receiver receives a duplicate `FIN` after having already
         completed delivery, it immediately retransmits `FIN_ACK`.
-5.  **Lost FIN_ACK & Receiver State Retention (Linger):**
+5.  **Lost `FIN_ACK` & Receiver State Retention (Linger):**
     -   If `FIN_ACK` is dropped on the reverse path, the sender will retransmit
         `FIN`.
     -   The receiver must retain connection state in a `LINGER` / `TIME_WAIT`
