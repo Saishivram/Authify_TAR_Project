@@ -1,7 +1,7 @@
 """
 server/app.py
 =============
-FastAPI Control Server for the TAR Protocol (Phase 5).
+
 
 Provides:
 - REST API for controlling Receiver, Relay, and Sender processes.

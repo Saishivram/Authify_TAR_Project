@@ -166,6 +166,27 @@ class TestSackTracker(unittest.TestCase):
         with self.assertRaises(ValueError):
             tracker.record_received_packet("10")  # type: ignore
 
+    def test_discontiguous_packet_below_floor_does_not_corrupt_ranges(self):
+        """Verifies that an old discontiguous packet ID at or below floor never violates AckPacket invariants."""
+        tracker = SackTracker(max_ranges=2)
+        # Record 10, 20, 30 -> 10 truncated, floor becomes 19, retained ranges [[30, 30], [20, 20]]
+        tracker.record_received_packet(10)
+        tracker.record_received_packet(20)
+        tracker.record_received_packet(30)
+        self.assertEqual(tracker.ack_range_floor_packet_id, 19)
+        self.assertEqual(tracker.get_sack_ranges(), [[30, 30], [20, 20]])
+
+        # Now an old discontiguous packet 15 arrives (15 <= floor 19)
+        res = tracker.record_received_packet(15)
+        self.assertFalse(res, "Discontiguous arrival below floor should not be inserted into ranges")
+        self.assertEqual(tracker.ack_range_floor_packet_id, 19)
+        self.assertEqual(tracker.get_sack_ranges(), [[30, 30], [20, 20]])
+
+        # create_ack_packet must succeed without raising InvalidPacketError
+        ack = tracker.create_ack_packet(connection_id="test", receiver_delivered_through=0)
+        self.assertEqual(ack.ack_range_floor_packet_id, 19)
+        self.assertEqual(ack.ack_ranges, [[30, 30], [20, 20]])
+
 
 if __name__ == "__main__":
     unittest.main()

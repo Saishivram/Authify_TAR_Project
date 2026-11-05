@@ -84,6 +84,12 @@ class SackTracker:
             return True
 
         # 3. Discontiguous arrival (packet_id > ack_received_through_packet_id + 1)
+        # If packet_id is at or below the floor, it falls within the truncated SACK
+        # history window. It cannot be represented in ack_ranges (since all ranges must
+        # be strictly above ack_range_floor_packet_id).
+        if packet_id <= self.ack_range_floor_packet_id:
+            return False
+
         if packet_id > self.largest_packet_id:
             self.largest_packet_id = packet_id
 
@@ -149,17 +155,21 @@ class SackTracker:
             )
 
     def _update_floor(self) -> None:
-        """Ensures floor is at least contiguous watermark, or equals watermark if ranges empty."""
-        if not self.ranges:
-            self.ack_range_floor_packet_id = self.ack_received_through_packet_id
-        else:
-            self.ack_range_floor_packet_id = max(
-                self.ack_range_floor_packet_id, self.ack_received_through_packet_id
-            )
+        """Ensures floor is at least contiguous watermark, and all ranges are strictly above floor."""
+        self.ack_range_floor_packet_id = max(
+            self.ack_range_floor_packet_id, self.ack_received_through_packet_id
+        )
+        if self.ranges:
+            # Purge any ranges that have fallen completely below or equal to floor
+            self.ranges = [r for r in self.ranges if r[0] > self.ack_range_floor_packet_id]
+            # Trim any range whose lower boundary is <= floor
+            for r in self.ranges:
+                if r[1] <= self.ack_range_floor_packet_id:
+                    r[1] = self.ack_range_floor_packet_id + 1
 
     def get_sack_ranges(self) -> List[List[int]]:
-        """Returns a copy of the current descending [high, low] SACK ranges."""
-        return [[h, l] for h, l in self.ranges]
+        """Returns a copy of the current descending [high, low] SACK ranges strictly above floor."""
+        return [[h, l] for h, l in self.ranges if l > self.ack_range_floor_packet_id and h >= l]
 
     def create_ack_packet(
         self,

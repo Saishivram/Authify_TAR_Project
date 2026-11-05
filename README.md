@@ -4,50 +4,6 @@ TAR is an experimental, single-stream, reliable, ordered transport protocol oper
 
 ---
 
-## Current Project Status
-
-- **Phase 1: Record Generator & Schema Validation** `[COMPLETED]`
-  - Synthetic dataset generator producing deterministic sequential logical records.
-  - Edge cases: normal, empty (0-byte value), multi-byte Unicode scripts/emojis, large (400–800 bytes), and boundary (~996 bytes) records.
-  - Three-metric byte accounting (`value_bytes`, `serialized_logical_payload_bytes`, `estimated_complete_data_datagram_bytes`).
-  - Standalone 100-record individual inspection evidence.
-- **Phase 2: Basic UDP Sender–Receiver Communication** `[COMPLETED]`
-  - Independent `Sender` and `Receiver` processes using Python standard-library UDP sockets.
-  - Strict measurement and enforcement of the 1,200-byte wire datagram ceiling using `recvfrom(65535)` to receive oversized datagrams whole for rejection, and `SO_RCVBUF` to prevent OS queue drops during bursts.
-  - Idempotent `START` $\to$ `START_ACK` session handshake with bounded retries (5x, 500 ms).
-  - Sequential, single-attempt DATA transmission (100 and 2,000 records).
-  - Strict pre-`FIN_ACK` delivery verification: validates total record count, sequential unique IDs, and zero gaps/duplicates before acknowledging `FIN`. Incomplete delivery is rejected and never acknowledged.
-  - Idempotent `FIN` teardown with bounded 2.0-second linger period: duplicate `FIN` triggers re-transmission of cached `FIN_ACK`, followed by clean shutdown.
-  - Separate metric accounting: distinct sender DATA-loop throughput vs full end-to-end session throughput; sent, received, missing, duplicate, and out-of-order records.
-- **Phase 3: Network Impairment Relay** `[COMPLETED]`
-  - Independent bi-directional proxy process intercepting traffic on Port A (`127.0.0.1:9002`) and Port B (`127.0.0.1:9003`).
-  - 100% raw byte preservation without deserializing, mutating, or re-encoding protocol envelopes.
-  - Completely decoupled forward and reverse `DirectionScheduler` engines: stalls or delays in one direction never block traffic in the other.
-  - Min-Heap Relative-Offset Scheduler with `boundary_offset` tracking that preserves true packet reordering across 400 ms stall boundaries. Overlapping stalls cleanly extend the pause window without double-counting remaining duration.
-  - Rate-based time-interval stalls (default 5.0s interval, 400 ms duration; 0 to disable) preventing stall storms at high transmission rates.
-  - Session-scoped out-of-order metrics tracking sequence inversions strictly per `(connection_id, direction)` across monotonic `packet_id`s (`DATA`, `FIN`).
-  - Deterministic random seeds (`--seed`) and targeted fault injection (`TargetedRule`).
-- **Phase 4: Reliability and Recovery Engine** `[COMPLETED]`
-  - Dual-watermark SACK Tracker (`transport/sack.py`): tracks `ack_received_through_packet_id` (contiguous prefix) and `ack_range_floor_packet_id` (retained floor), bounding history to <= 32 ranges.
-  - Reorder Buffer (`transport/reorder_buffer.py`): in-order pass-through invariant ($record\_id == next\_expected\_record$ bypasses full capacity), cascading drain, and duplicate suppression.
-  - RFC 6298 RTT Estimator & Adaptive Multiplier (`transport/rtt.py`): Karn's unambiguous sampling, bounded ACK delay, adaptive reordering multiplier ($1.0\times$ to $4.0\times$), and 16-flight clean decay engine.
-  - Recovery Coordinator (`transport/recovery.py`): centralized per-record 7-state machine (`QUEUED`, `IN_FLIGHT`, `BUFFERED_AT_RECEIVER`, `REPAIR_PENDING`, `REPAIR_IN_FLIGHT`, `DELIVERED`, `FAILED`), feedback-driven repair cancellation, RACK loss detection, separate PTO probing, and fallback exponential RTO backoff.
-  - Gap-Aware FIN Lifecycle Teardown: withholds `FIN_ACK` upon delivery gaps and sends SACK to trigger sender repairs until complete delivery is verified.
-  - Automated E2E Reliability Suite (`tests/test_reliability_e2e.py`): 18 comprehensive integration scenarios (T01 through T18) passing over loopback sockets.
-  - Scaling Benchmarks (`benchmarks/run_phase4_benchmarks.py`): evaluated from 2,000 to 20,000 records across 9 scenarios (B01-B09); achieved up to 10,576 rec/s clean throughput and verified $\Delta t_{delivery}^{max} \le 1.0\text{s}$ stall bound across all impaired scenarios.
-- **Phase 5: Control Server & Web Dashboard** `[COMPLETED]`
-  - FastAPI Control Server (`server/app.py`): REST API and WebSocket streaming server orchestrating Sender, Receiver, and Relay without manual terminal switching.
-  - Process & System Manager (`server/manager.py`): Non-blocking threaded component lifecycle management, live metric aggregation, dynamic on-the-fly network impairment reconfiguration, and operator attention alert management.
-  - Clean Light-Themed Web Dashboard (`server/static/`): Strictly light-coloured aesthetic (`#f8fafc` background, `#ffffff` cards, `#2563eb` subtle blue accents, readable dark typography), featuring System Controls, Delivery Monitoring with animated progress bar, Network Conditions sliders, Live Network Statistics, and a filterable Event History stream.
-  - Automated Tests: 128 tests passing (`Ran 128 tests in 36.836s. OK`).
-- **Phase 6: Final Integration & Submission Preparation** `[COMPLETED]`
-  - Clean-Machine Single Startup Command: Entire system orchestratable via single command (`python -m server.app`).
-  - Zero External Infrastructure: 100% self-contained standard library + FastAPI; no Docker, Redis, Kafka, or external databases.
-  - Video Demonstration Script & Checklist (`reports/demo_script.md`): Structured 7–9 minute presentation script covering all 9 required evaluation points.
-  - Complete End-to-End Verification: Tested live 2,000-record transfer with 5% loss, 2% reorder, and 400ms stall via dashboard; verified 100% ordered delivery with max gap 0.157s.
-
----
-
 ## Project Structure
 
 ```text
@@ -58,6 +14,7 @@ s:/TAR_Project/
 ├── DECISIONS.md                           # Architecture choices, trade-offs, and decision log
 ├── TEST_PLAN.md                           # Verification methodology and test matrix (T00-T18)
 ├── README.md                              # Project overview, architecture, and commands
+├── AI_CONVERSATION_TRANSCRIPT.md          # Complete AI pair-programming conversation history (31 turns)
 │
 ├── schemas/                               # Phase 1: Record schema & validation
 │   ├── __init__.py

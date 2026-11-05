@@ -13,7 +13,6 @@
       <div class="logo-mark">TAR</div>
       <div class="title-group">
         <h1>Time-Aware Reliable Transport</h1>
-        <span class="subtitle">Phase 5 Control Server & Live Telemetry</span>
       </div>
     </div>
 
@@ -28,15 +27,9 @@
   </header>
 
   <main class="dashboard-container">
-    <!-- Human Attention Alerts Banner -->
-    <section class="attention-section" id="attention-section">
-      <div class="attention-card healthy" id="attention-container">
-        <div class="attention-icon">✓</div>
-        <div class="attention-content">
-          <div class="attention-title" id="attention-title">System Normal</div>
-          <div class="attention-desc" id="attention-desc">All components operating within nominal SLAs. No operator attention required.</div>
-        </div>
-      </div>
+    <!-- Human Attention Alerts Banner (Hidden by default, shown only on active alerts) -->
+    <section class="attention-section" id="attention-section" style="display: none;">
+      <div class="attention-card" id="attention-container" style="display: none;"></div>
     </section>
 
     <!-- Main Grid Layout -->

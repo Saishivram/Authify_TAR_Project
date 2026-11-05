@@ -192,20 +192,20 @@ function updateComponentRow(name, comp) {
 }
 
 function updateHumanAttention(alerts) {
+  const section = document.getElementById('attention-section');
   const container = document.getElementById('attention-container');
   if (!container) return;
 
   if (!alerts || alerts.length === 0) {
-    container.className = 'attention-card healthy';
-    container.innerHTML = `
-      <div class="attention-icon">✓</div>
-      <div class="attention-content">
-        <div class="attention-title">System Normal</div>
-        <div class="attention-desc">All components operating within nominal SLAs. No operator attention required.</div>
-      </div>
-    `;
+    if (section) section.style.display = 'none';
+    container.style.display = 'none';
+    container.innerHTML = '';
     return;
   }
+
+  // Show banner when active alerts or errors exist
+  if (section) section.style.display = 'block';
+  container.style.display = 'flex';
 
   // Has active alerts
   const highestSev = alerts.some((a) => a.severity === 'error') ? 'error' : 'warning';
