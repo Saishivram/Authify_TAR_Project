@@ -1,0 +1,161 @@
+{
+  "protocol": "TAR",
+  "phase": 3,
+  "runs": {
+    "clean_run_100_records": {
+      "configuration": {
+        "loss_rate": 0.0,
+        "reorder_rate": 0.0,
+        "stall_interval_sec": 0.0,
+        "stall_duration_ms": 400.0,
+        "seed": 42
+      },
+      "sender": {
+        "session_id": "session-1793812126",
+        "sent_records": 100,
+        "total_data_bytes_sent": 35022,
+        "max_actual_datagram_size_bytes": 1113,
+        "duration_seconds": 0.016,
+        "throughput_records_per_second": 6250.0,
+        "status": "COMPLETED"
+      },
+      "relay": {
+        "forward": {
+          "packets_received": 102,
+          "packets_forwarded": 102,
+          "packets_dropped_loss": 0,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 0,
+          "packets_dispatched_out_of_order": 0,
+          "packets_delayed_by_stall": 0,
+          "stalls_triggered": 0,
+          "total_bytes_received": 35251,
+          "total_bytes_forwarded": 35251
+        },
+        "reverse": {
+          "packets_received": 2,
+          "packets_forwarded": 2,
+          "packets_dropped_loss": 0,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 0,
+          "packets_dispatched_out_of_order": 0,
+          "packets_delayed_by_stall": 0,
+          "stalls_triggered": 0,
+          "total_bytes_received": 261,
+          "total_bytes_forwarded": 261
+        }
+      },
+      "receiver": {
+        "status": "COMPLETED",
+        "expected_records": 100,
+        "received_records": 100,
+        "missing_records_count": 0,
+        "duplicate_records_count": 0,
+        "out_of_order_records_count": 0,
+        "validation_result": "PASS"
+      }
+    },
+    "impaired_run_100_records": {
+      "configuration": {
+        "loss_rate": 0.05,
+        "reorder_rate": 0.10,
+        "stall_interval_sec": 0.005,
+        "stall_duration_ms": 400.0,
+        "seed": 42
+      },
+      "sender": {
+        "session_id": "session-1793812219",
+        "sent_records": 100,
+        "status": "FAILED_ON_VERIFICATION",
+        "failure_reason": "INCOMPLETE_DELIVERY"
+      },
+      "relay": {
+        "forward": {
+          "packets_received": 105,
+          "packets_forwarded": 99,
+          "packets_dropped_loss": 6,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 9,
+          "packets_dispatched_out_of_order": 8,
+          "packets_delayed_by_stall": 441,
+          "stalls_triggered": 5,
+          "total_bytes_received": 35614,
+          "total_bytes_forwarded": 32721
+        },
+        "reverse": {
+          "packets_received": 2,
+          "packets_forwarded": 2,
+          "packets_dropped_loss": 0,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 0,
+          "packets_dispatched_out_of_order": 0,
+          "packets_delayed_by_stall": 0,
+          "stalls_triggered": 0,
+          "total_bytes_received": 324,
+          "total_bytes_forwarded": 324
+        }
+      },
+      "receiver": {
+        "status": "FAILED",
+        "expected_records": 100,
+        "received_records": 86,
+        "missing_records_count": 14,
+        "missing_records_sample": [4, 6, 10, 14, 21, 34, 44, 50, 62, 63, 67, 82, 87, 90],
+        "validation_failure_reason": "Record count mismatch: expected 100, received 86; Missing 14 records: [4, 6, 10, 14, 21, 34, 44, 50, 62, 63]"
+      }
+    },
+    "manual_stall_reproduction_100_records": {
+      "configuration": {
+        "loss_rate": 0.0,
+        "reorder_rate": 0.0,
+        "stall_interval_sec": 0.05,
+        "stall_duration_ms": 400.0,
+        "seed": 42
+      },
+      "sender": {
+        "session_id": "manual-stall-repro-100",
+        "sent_records": 100,
+        "total_data_bytes_sent": 35422,
+        "max_actual_datagram_size_bytes": 1117,
+        "full_session_duration_seconds": 0.828,
+        "sender_data_loop_throughput_records_per_second": 6250.0,
+        "status": "COMPLETED"
+      },
+      "relay": {
+        "forward": {
+          "packets_received": 102,
+          "packets_forwarded": 102,
+          "packets_dropped_loss": 0,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 0,
+          "packets_dispatched_out_of_order": 0,
+          "packets_delayed_by_stall": 102,
+          "stalls_triggered": 2,
+          "total_bytes_received": 35659,
+          "total_bytes_forwarded": 35659
+        },
+        "reverse": {
+          "packets_received": 2,
+          "packets_forwarded": 2,
+          "packets_dropped_loss": 0,
+          "packets_dropped_targeted": 0,
+          "packets_delayed_for_reordering": 0,
+          "packets_dispatched_out_of_order": 0,
+          "packets_delayed_by_stall": 0,
+          "stalls_triggered": 0,
+          "total_bytes_received": 269,
+          "total_bytes_forwarded": 269
+        }
+      },
+      "receiver": {
+        "status": "COMPLETED",
+        "expected_records": 100,
+        "received_records": 100,
+        "missing_records_count": 0,
+        "duplicate_records_count": 0,
+        "out_of_order_records_count": 0,
+        "validation_result": "PASS"
+      }
+    }
+  }
+}

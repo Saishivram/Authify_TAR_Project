@@ -1,0 +1,52 @@
+{
+  "protocol": "TAR",
+  "phase": 2,
+  "runs": {
+    "run_100_records": {
+      "input_file": "data/sample_100.jsonl",
+      "output_file": "data/received_100.jsonl",
+      "sent_records": 100,
+      "received_records": 100,
+      "missing_records_count": 0,
+      "duplicate_records_count": 0,
+      "out_of_order_records_count": 0,
+      "max_actual_datagram_size_bytes": 1113,
+      "protocol_ceiling_mtu_bytes": 1200,
+      "oversized_datagrams_rejected": 0,
+      "total_data_bytes_sent": 35022,
+      "sender_data_loop_duration_seconds": 0.015,
+      "sender_data_loop_throughput_records_per_second": 6666.67,
+      "full_session_duration_seconds": 0.015,
+      "full_session_throughput_records_per_second": 6666.67,
+      "throughput_kb_per_second": 2280.08,
+      "start_retries_used": 0,
+      "fin_retries_used": 0,
+      "receiver_linger_seconds": 2.0,
+      "status": "COMPLETED",
+      "validation_result": "PASS"
+    },
+    "run_2000_records": {
+      "input_file": "data/records_2000.jsonl",
+      "output_file": "data/received_2000.jsonl",
+      "sent_records": 2000,
+      "received_records": 2000,
+      "missing_records_count": 0,
+      "duplicate_records_count": 0,
+      "out_of_order_records_count": 0,
+      "max_actual_datagram_size_bytes": 1117,
+      "protocol_ceiling_mtu_bytes": 1200,
+      "oversized_datagrams_rejected": 0,
+      "total_data_bytes_sent": 661958,
+      "sender_data_loop_duration_seconds": 0.094,
+      "sender_data_loop_throughput_records_per_second": 21276.6,
+      "full_session_duration_seconds": 0.094,
+      "full_session_throughput_records_per_second": 21276.6,
+      "throughput_kb_per_second": 6877.06,
+      "start_retries_used": 0,
+      "fin_retries_used": 0,
+      "receiver_linger_seconds": 2.0,
+      "status": "COMPLETED",
+      "validation_result": "PASS"
+    }
+  }
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TAR Protocol - Control & Monitoring Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">TAR</div>
+      <div class="title-group">
+        <h1>Time-Aware Reliable Transport</h1>
+        <span class="subtitle">Phase 5 Control Server & Live Telemetry</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="ws-status" id="ws-status-badge">
+        <span class="ws-dot" id="ws-dot"></span>
+        <span id="ws-status-text">Connecting...</span>
+      </div>
+      <button class="btn btn-outline" id="btn-quick-stop-all" onclick="stopComponent('all')">Stop All</button>
+      <button class="btn btn-primary" id="btn-quick-start-all" onclick="startAllComponents()">Start Session</button>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+    <!-- Human Attention Alerts Banner -->
+    <section class="attention-section" id="attention-section">
+      <div class="attention-card healthy" id="attention-container">
+        <div class="attention-icon">✓</div>
+        <div class="attention-content">
+          <div class="attention-title" id="attention-title">System Normal</div>
+          <div class="attention-desc" id="attention-desc">All components operating within nominal SLAs. No operator attention required.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid Layout -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Controls & Configuration -->
+      <div class="grid-col left-col">
+        <!-- System Controls Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>System Controls</h2>
+            <span class="badge badge-subtle">Process Management</span>
+          </div>
+          <div class="card-body">
+            <!-- Component Rows -->
+            <div class="component-list">
+              <!-- Receiver Row -->
+              <div class="component-row">
+                <div class="comp-info">
+                  <div class="comp-name-group">
+                    <span class="comp-name">Receiver</span>
+                    <span class="comp-port">Port 9004</span>
+                  </div>
+                  <span class="status-pill status-stopped" id="pill-receiver">STOPPED</span>
+                </div>
+                <div class="comp-actions">
+                  <button class="btn btn-sm btn-outline-primary" id="btn-start-receiver" onclick="startComponent('receiver')">Start</button>
+                  <button class="btn btn-sm btn-outline-danger" id="btn-stop-receiver" onclick="stopComponent('receiver')">Stop</button>
+                </div>
+              </div>
+
+              <!-- Relay Row -->
+              <div class="component-row">
+                <div class="comp-info">
+                  <div class="comp-name-group">
+                    <span class="comp-name">Impairment Relay</span>
+                    <span class="comp-port">Ports 9002 ⇄ 9003</span>
+                  </div>
+                  <span class="status-pill status-stopped" id="pill-relay">STOPPED</span>
+                </div>
+                <div class="comp-actions">
+                  <button class="btn btn-sm btn-outline-primary" id="btn-start-relay" onclick="startComponent('relay')">Start</button>
+                  <button class="btn btn-sm btn-outline-danger" id="btn-stop-relay" onclick="stopComponent('relay')">Stop</button>
+                </div>
+              </div>
+
+              <!-- Sender Row -->
+              <div class="component-row">
+                <div class="comp-info">
+                  <div class="comp-name-group">
+                    <span class="comp-name">Sender</span>
+                    <span class="comp-port">Port 9001 → 9002</span>
+                  </div>
+                  <span class="status-pill status-stopped" id="pill-sender">STOPPED</span>
+                </div>
+                <div class="comp-actions">
+                  <button class="btn btn-sm btn-outline-primary" id="btn-start-sender" onclick="startComponent('sender')">Start</button>
+                  <button class="btn btn-sm btn-outline-danger" id="btn-stop-sender" onclick="stopComponent('sender')">Stop</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Session Configuration Section -->
+            <div class="section-divider"></div>
+            <div class="form-group-title">Coordinated Run Settings</div>
+
+            <div class="form-row">
+              <label for="select-record-count">Records Dataset</label>
+              <select id="select-record-count" class="form-select">
+                <option value="100">100 Records (Quick Smoke Test)</option>
+                <option value="2000" selected>2,000 Records (Standard Benchmark)</option>
+                <option value="5000">5,000 Records (Scaling Test)</option>
+                <option value="10000">10,000 Records (High Throughput)</option>
+                <option value="20000">20,000 Records (Stress Scaling)</option>
+              </select>
+            </div>
+
+            <div class="form-row form-row-split">
+              <div class="form-subcol">
+                <label for="input-window">Send Window</label>
+                <input type="number" id="input-window" class="form-input" value="200" min="10" max="1000">
+              </div>
+              <div class="form-subcol">
+                <label for="input-pace">Pacing (sec)</label>
+                <input type="number" id="input-pace" class="form-input" value="0.0" step="0.0001" min="0.0" max="0.1">
+              </div>
+            </div>
+
+            <div class="action-bar-full">
+              <button class="btn btn-primary btn-block" onclick="startAllComponents()">
+                Launch Complete Transport Session
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Network Impairments Configuration Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Network Conditions</h2>
+            <span class="badge badge-subtle">Relay Impairments</span>
+          </div>
+          <div class="card-body">
+            <p class="card-help-text">Adjust simulated network characteristics. Changes apply dynamically to the running relay.</p>
+
+            <!-- Packet Loss Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="range-loss">Forward Packet Loss</label>
+                <span class="slider-val" id="val-loss">5.0%</span>
+              </div>
+              <input type="range" id="range-loss" min="0" max="25" step="0.5" value="5.0" oninput="syncSlider('loss')">
+            </div>
+
+            <!-- Packet Reorder Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="range-reorder">Forward Packet Reorder</label>
+                <span class="slider-val" id="val-reorder">2.0%</span>
+              </div>
+              <input type="range" id="range-reorder" min="0" max="15" step="0.5" value="2.0" oninput="syncSlider('reorder')">
+            </div>
+
+            <!-- Stall Duration Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="range-stall-duration">Stall Duration</label>
+                <span class="slider-val" id="val-stall-duration">400 ms</span>
+              </div>
+              <input type="range" id="range-stall-duration" min="0" max="1000" step="50" value="400" oninput="syncSlider('stall-duration')">
+            </div>
+
+            <!-- Stall Interval Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="range-stall-interval">Stall Interval</label>
+                <span class="slider-val" id="val-stall-interval">5.0 s</span>
+              </div>
+              <input type="range" id="range-stall-interval" min="0" max="10" step="0.5" value="5.0" oninput="syncSlider('stall-interval')">
+            </div>
+
+            <!-- Reverse ACK Loss Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <label for="range-reverse-loss">Reverse ACK Loss</label>
+                <span class="slider-val" id="val-reverse-loss">0.0%</span>
+              </div>
+              <input type="range" id="range-reverse-loss" min="0" max="20" step="0.5" value="0.0" oninput="syncSlider('reverse-loss')">
+            </div>
+
+            <div class="active-config-box" id="active-config-summary">
+              <strong>Active Relay:</strong> Loss 5.0% | Reorder 2.0% | Stall 400ms / 5.0s | ACK Loss 0.0%
+            </div>
+
+            <div class="action-bar-full">
+              <button class="btn btn-primary btn-block" id="btn-apply-config" onclick="applyNetworkConfig()">
+                Apply Network Conditions
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Delivery & Live Network Telemetry -->
+      <div class="grid-col right-col">
+        <!-- Delivery Monitoring Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Delivery Monitoring</h2>
+            <span class="badge badge-primary" id="badge-session-state">IDLE</span>
+          </div>
+          <div class="card-body">
+            <!-- 4 Metric Tiles -->
+            <div class="metric-tiles-grid">
+              <div class="metric-tile">
+                <span class="metric-label">Expected Records</span>
+                <span class="metric-value" id="val-expected">0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-label">Delivered In-Order</span>
+                <span class="metric-value text-success" id="val-delivered">0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-label">Sent Datagrams</span>
+                <span class="metric-value" id="val-sent">0</span>
+              </div>
+              <div class="metric-tile">
+                <span class="metric-label">Pending Records</span>
+                <span class="metric-value" id="val-pending">0</span>
+              </div>
+            </div>
+
+            <!-- Delivery Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-header">
+                <span class="progress-title">Ordered Delivery Progress</span>
+                <span class="progress-percentage" id="val-progress-text">0.0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="val-progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Real-time Rate Row -->
+            <div class="rates-summary-row">
+              <div class="rate-item">
+                <span class="rate-label">Transmission Throughput</span>
+                <span class="rate-value" id="val-throughput">0.0 rec/s</span>
+              </div>
+              <div class="rate-item">
+                <span class="rate-label">In-Flight Transmissions</span>
+                <span class="rate-value" id="val-in-flight">0</span>
+              </div>
+              <div class="rate-item">
+                <span class="rate-label">Receiver Buffer Queued</span>
+                <span class="rate-value" id="val-reorder-buffered">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Network Statistics Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Live Network Statistics</h2>
+            <span class="badge badge-subtle">Protocol Health</span>
+          </div>
+          <div class="card-body">
+            <div class="stats-table">
+              <div class="stat-row">
+                <span class="stat-name">Forward Packets Dropped (Loss)</span>
+                <span class="stat-val font-bold text-danger" id="stat-fwd-dropped">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Forward Packets Reordered</span>
+                <span class="stat-val font-bold text-primary" id="stat-fwd-reordered">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Reverse ACKs Sent / Dropped</span>
+                <span class="stat-val" id="stat-rev-acks">0 / 0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Loss Repairs Dispatched (Retransmissions)</span>
+                <span class="stat-val font-bold text-danger" id="stat-retrans">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">PTO Probes Dispatched</span>
+                <span class="stat-val" id="stat-probes">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Max Delivery Gap (&Delta;t<sub>delivery</sub><sup>max</sup>)</span>
+                <span class="stat-val font-bold" id="stat-max-gap">0.000 s</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Smoothed RTT / RTO</span>
+                <span class="stat-val" id="stat-rtt-rto">0.0 ms / 200.0 ms</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Max Wire Datagram Size</span>
+                <span class="stat-val" id="stat-datagram-size">0 bytes (&le; 1200 MTU)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event History Log Card -->
+    <section class="card full-width-card">
+      <div class="card-header">
+        <div class="header-left-group">
+          <h2>Event History</h2>
+          <span class="badge badge-subtle">Protocol State & Milestone Stream</span>
+        </div>
+        <div class="header-right-group">
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="ALL" onclick="filterEvents('ALL')">All</button>
+            <button class="filter-btn" data-filter="HANDSHAKE" onclick="filterEvents('HANDSHAKE')">Handshake</button>
+            <button class="filter-btn" data-filter="RETRANSMISSION" onclick="filterEvents('RETRANSMISSION')">Repairs</button>
+            <button class="filter-btn" data-filter="PACKET_LOSS" onclick="filterEvents('PACKET_LOSS')">Drops</button>
+            <button class="filter-btn" data-filter="ERROR" onclick="filterEvents('ERROR')">Errors</button>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="clearEventLog()">Clear Log</button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="log-table-container">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Time</th>
+                <th style="width: 100px;">Source</th>
+                <th style="width: 130px;">Type</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body">
+              <tr>
+                <td colspan="4" class="empty-log-cell">Awaiting protocol events...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <span>Time-Aware Reliable Transport (TAR) — Phase 5 Dashboard</span>
+      <span>FastAPI Control Server & WebSockets</span>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
